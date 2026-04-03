@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -14,7 +15,7 @@ function getPerformanceBand(score) {
   return "No Attempt";
 }
 
-export default function TeacherPage() {
+function TeacherPageContent() {
   const searchParams = useSearchParams();
 
   const standard = searchParams.get("standard") || "Not Set";
@@ -27,8 +28,10 @@ export default function TeacherPage() {
   const initialScore = Number(searchParams.get("initialScore") || 0);
   const revisedScore = Number(searchParams.get("revisedScore") || 0);
   const improvement = Number(searchParams.get("improvement") || 0);
-  const initialWeaknesses = searchParams.get("initialWeaknesses") || "No diagnostics available";
-  const revisedWeaknesses = searchParams.get("revisedWeaknesses") || "No diagnostics available";
+  const initialWeaknesses =
+    searchParams.get("initialWeaknesses") || "No diagnostics available";
+  const revisedWeaknesses =
+    searchParams.get("revisedWeaknesses") || "No diagnostics available";
 
   const lessonQuery = `standard=${encodeURIComponent(
     standard
@@ -43,23 +46,27 @@ export default function TeacherPage() {
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-4 text-4xl font-bold">Teacher Dashboard</h1>
         <p className="mb-8 text-slate-300">
-          Manage lesson flow, preview the student experience, and monitor recent activity.
+          Manage lesson flow, preview the student experience, and monitor recent
+          activity.
         </p>
 
         <div className="mb-8 rounded-2xl bg-slate-900 p-6">
           <h2 className="mb-4 text-2xl font-semibold">Current Lesson</h2>
 
           <p>
-            <span className="font-semibold text-white">Standard:</span> {standard}
+            <span className="font-semibold text-white">Standard:</span>{" "}
+            {standard}
           </p>
           <p className="mt-2">
             <span className="font-semibold text-white">Skill:</span> {skill}
           </p>
           <p className="mt-2">
-            <span className="font-semibold text-white">Text Type:</span> {textType}
+            <span className="font-semibold text-white">Text Type:</span>{" "}
+            {textType}
           </p>
           <p className="mt-2">
-            <span className="font-semibold text-white">Difficulty:</span> {difficulty}
+            <span className="font-semibold text-white">Difficulty:</span>{" "}
+            {difficulty}
           </p>
         </div>
 
@@ -90,12 +97,16 @@ export default function TeacherPage() {
 
         <div className="mb-8 grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl bg-slate-900 p-6">
-            <h2 className="mb-3 text-xl font-semibold">Initial Diagnostic Patterns</h2>
+            <h2 className="mb-3 text-xl font-semibold">
+              Initial Diagnostic Patterns
+            </h2>
             <p className="text-slate-300">{initialWeaknesses}</p>
           </div>
 
           <div className="rounded-2xl bg-slate-900 p-6">
-            <h2 className="mb-3 text-xl font-semibold">Revised Diagnostic Patterns</h2>
+            <h2 className="mb-3 text-xl font-semibold">
+              Revised Diagnostic Patterns
+            </h2>
             <p className="text-slate-300">{revisedWeaknesses}</p>
           </div>
         </div>
@@ -130,7 +141,8 @@ export default function TeacherPage() {
           <div className="rounded-2xl bg-slate-900 p-6">
             <h2 className="text-xl font-semibold">Class Data</h2>
             <p className="mt-2 text-slate-300">
-              Completion, response quality, and growth tracking will appear here.
+              Completion, response quality, and growth tracking will appear
+              here.
             </p>
             <button
               className="mt-4 rounded-xl border border-slate-700 px-5 py-3 font-semibold text-slate-400"
@@ -142,7 +154,9 @@ export default function TeacherPage() {
         </div>
 
         <div className="rounded-2xl bg-slate-900 p-6">
-          <h2 className="mb-4 text-2xl font-semibold">Recent Student Activity</h2>
+          <h2 className="mb-4 text-2xl font-semibold">
+            Recent Student Activity
+          </h2>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
@@ -202,10 +216,32 @@ export default function TeacherPage() {
         <div className="mt-10 rounded-2xl bg-slate-900 p-6">
           <h2 className="mb-3 text-2xl font-semibold">Current MVP Flow</h2>
           <p className="text-slate-300">
-            Teacher Dashboard → Lesson Builder → Student Lesson → Quality Check → Feedback → Revision → Completion Tracking
+            Teacher Dashboard → Lesson Builder → Student Lesson → Quality Check
+            → Feedback → Revision → Completion Tracking
           </p>
         </div>
       </div>
     </main>
+  );
+}
+
+function TeacherPageFallback() {
+  return (
+    <main className="min-h-screen bg-slate-950 p-8 text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="rounded-2xl bg-slate-900 p-6">
+          <h1 className="text-4xl font-bold">Teacher Dashboard</h1>
+          <p className="mt-2 text-slate-300">Loading dashboard...</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function TeacherPage() {
+  return (
+    <Suspense fallback={<TeacherPageFallback />}>
+      <TeacherPageContent />
+    </Suspense>
   );
 }
