@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -254,7 +254,7 @@ function FeedbackCard({ title, result }) {
   );
 }
 
-export default function LessonDemoPage() {
+function LessonDemoPageContent() {
   const searchParams = useSearchParams();
 
   const standard = searchParams.get("standard") || "ELA.9.R.1.1";
@@ -534,7 +534,11 @@ export default function LessonDemoPage() {
             </span>
           </div>
 
-          {result1 && <div className="mt-4"><FeedbackCard title="Box 1" result={result1} /></div>}
+          {result1 && (
+            <div className="mt-4">
+              <FeedbackCard title="Box 1" result={result1} />
+            </div>
+          )}
         </div>
 
         <div className={`mb-6 rounded-2xl p-6 ${box1Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"}`}>
@@ -574,7 +578,11 @@ export default function LessonDemoPage() {
             </div>
           )}
 
-          {result2 && <div className="mt-4"><FeedbackCard title="Box 2" result={result2} /></div>}
+          {result2 && (
+            <div className="mt-4">
+              <FeedbackCard title="Box 2" result={result2} />
+            </div>
+          )}
         </div>
 
         <div className={`mb-6 rounded-2xl p-6 ${box2Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"}`}>
@@ -614,7 +622,11 @@ export default function LessonDemoPage() {
             </div>
           )}
 
-          {result3 && <div className="mt-4"><FeedbackCard title="Box 3" result={result3} /></div>}
+          {result3 && (
+            <div className="mt-4">
+              <FeedbackCard title="Box 3" result={result3} />
+            </div>
+          )}
         </div>
 
         <div className="mb-6 rounded-2xl bg-slate-900 p-6">
@@ -689,5 +701,26 @@ export default function LessonDemoPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function LessonDemoFallback() {
+  return (
+    <main className="min-h-screen bg-slate-950 p-8 text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="rounded-2xl bg-slate-900 p-6">
+          <h1 className="text-3xl font-bold">Loading lesson...</h1>
+          <p className="mt-2 text-slate-300">Preparing lesson demo.</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function LessonDemoPage() {
+  return (
+    <Suspense fallback={<LessonDemoFallback />}>
+      <LessonDemoPageContent />
+    </Suspense>
   );
 }
