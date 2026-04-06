@@ -3,14 +3,13 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { textBank } from "@/lib/textBank";
 
 function getSkillInstruction(skill) {
   const bank = {
     Theme: {
       title: "Skill Focus: Theme",
       definition:
-        "Theme is the deeper message or lesson about life that a text communicates. A theme is not just one word like love or loss. It is a full idea or insight about life.",
+        "Theme is the deeper message or lesson about life that a text communicates. A theme is not just one word like 'love' or 'loss.' It is a full idea or insight about life.",
       strategies: [
         "Notice what the character learns, realizes, or comes to understand.",
         "Look for repeated ideas, emotions, or struggles across the passage.",
@@ -22,7 +21,7 @@ function getSkillInstruction(skill) {
       responseTips: [
         "Box 1: State the theme in a full sentence.",
         "Box 2: Use specific text evidence.",
-        "Box 3: Explain how those details develop the theme.",
+        "Box 3: Explain how the evidence develops the theme.",
       ],
     },
     "Main Idea": {
@@ -99,31 +98,51 @@ function getSkillInstruction(skill) {
     },
   };
 
-  return bank[skill] || bank.Theme;
+  return bank[skill] || bank["Theme"];
 }
 
-function getLessonText(textId) {
-  if (!Array.isArray(textBank) || textBank.length === 0) return null;
-  if (!textId) return textBank[0];
-  return textBank.find((item) => item.id === textId) || textBank[0];
-}
-
-function getQuestionSet(skill, lessonText) {
-  if (
-    lessonText &&
-    lessonText.skillQuestionSets &&
-    Array.isArray(lessonText.skillQuestionSets[skill])
-  ) {
-    return lessonText.skillQuestionSets[skill];
-  }
-
-  return (
-    lessonText?.skillQuestionSets?.Theme || [
+function getQuestionSet(skill) {
+  const bank = {
+    Theme: [
       "What is a central theme of the passage?",
       "Which details from the passage best develop that theme?",
       "Explain how those details develop the theme.",
-    ]
-  );
+    ],
+    "Main Idea": [
+      "What is the main idea of the passage?",
+      "Which details best support the main idea?",
+      "Explain how those details support the main idea.",
+    ],
+    Inference: [
+      "What can you infer about Elena’s grandmother from the box and letters?",
+      "Which details from the passage support that inference?",
+      "Explain how those details support your inference.",
+    ],
+    "Text Evidence": [
+      "What idea about Elena’s growth does the passage develop?",
+      "What is the strongest piece of text evidence that supports your answer?",
+      "Explain how that evidence supports your answer.",
+    ],
+    "Context Clues": [
+      "What does the word 'inheritance' most likely suggest in the final paragraph?",
+      "Which surrounding details help you determine that meaning?",
+      "Explain why those details support your answer.",
+    ],
+  };
+
+  return bank[skill] || bank["Theme"];
+}
+
+function getPassage() {
+  return `Elena waited until the apartment was quiet before opening the old wooden box. She had seen it for years on the top shelf of her grandmother’s closet, always pushed toward the back as if it belonged to a life that no longer wished to be remembered. Dust clung to the corners. The metal clasp gave way with a soft click.
+
+Inside were photographs, letters tied with a faded blue ribbon, and a watch that no longer moved. Elena lifted the first photograph carefully. In it, her grandmother stood beside a train, shoulders squared, eyes fixed somewhere beyond the camera. She looked younger than Elena had ever imagined her to be, but there was already something ancient in her expression, as though she had learned too early that the world could take things away without asking.
+
+Elena unfolded one of the letters. The handwriting was narrow and precise. It spoke of long workdays, of missing home, of a promise to keep going no matter how lonely the city became. At the bottom of the page, a single sentence had been underlined twice: "You do not always get to choose the road, but you do choose how you walk it."
+
+She read the sentence again. Then once more. Outside, a siren rose and faded into the distance. The apartment remained still. Elena thought of the way her grandmother never complained, the way she folded every hardship into silence and turned it into something useful. Until that moment, Elena had mistaken that silence for absence, for emptiness. Now it seemed full—crowded with sacrifices, decisions, and endurance.
+
+When Elena finally closed the box, she did not place it back on the shelf. Instead, she carried it to her room and set it on her desk. For the first time, the future felt less like an open question and more like an inheritance—heavy, unfinished, and somehow hers.`;
 }
 
 async function evaluateWithAI({
@@ -301,8 +320,8 @@ function containsQuoteOrEvidenceLanguage(text) {
     lower.includes("one detail") ||
     lower.includes("the author writes") ||
     lower.includes("in the passage") ||
-    lower.includes("huck") ||
-    lower.includes("jim")
+    lower.includes("when elena") ||
+    lower.includes("her grandmother")
   );
 }
 
@@ -350,9 +369,9 @@ function startsClearly(text, skill) {
 
   if (skill === "Context Clues") {
     return (
-      trimmed.startsWith("the phrase") ||
       trimmed.startsWith("the word") ||
-      trimmed.startsWith("in this passage")
+      trimmed.startsWith("in this passage") ||
+      trimmed.startsWith("the phrase")
     );
   }
 
@@ -512,32 +531,14 @@ function DraftSupportCard({ boxNumber, answer, skill, locked = false }) {
 function LessonDemoPageContent() {
   const searchParams = useSearchParams();
 
-  const textId = searchParams.get("textId") || "";
-  const lessonText = getLessonText(textId);
-
-  if (!lessonText) {
-    return (
-      <main className="min-h-screen bg-slate-950 p-8 text-white">
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-2xl border border-red-700 bg-red-900/20 p-6 text-red-300">
-            No lesson text found. Add at least one text to src/lib/textBank.js.
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const standard =
-    searchParams.get("standard") ||
-    lessonText.primaryStandards?.[0] ||
-    "Not Set";
+  const standard = searchParams.get("standard") || "ELA.9.R.1.1";
   const skill = searchParams.get("skill") || "Theme";
-  const textType = searchParams.get("textType") || lessonText.textType || "Literary";
+  const textType = searchParams.get("textType") || "Literary Passage";
   const difficulty = searchParams.get("difficulty") || "On Grade Level";
 
   const skillInfo = getSkillInstruction(skill);
-  const questions = getQuestionSet(skill, lessonText);
-  const passage = lessonText.passage || "";
+  const questions = getQuestionSet(skill);
+  const passage = getPassage();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -810,7 +811,8 @@ function LessonDemoPageContent() {
 
           {!studentReady ? (
             <div className="mt-4 rounded-xl border border-amber-800 bg-slate-950 p-3 text-amber-300">
-              Enter first name, last name, and period before starting the lesson.
+              Enter first name, last name, and period before starting the
+              lesson.
             </div>
           ) : (
             <div className="mt-4 rounded-xl border border-emerald-800 bg-emerald-900/20 p-3 text-emerald-300">
@@ -822,14 +824,6 @@ function LessonDemoPageContent() {
         <div className="mb-6 rounded-2xl bg-slate-900 p-6">
           <h2 className="mb-3 text-2xl font-semibold">Lesson Info</h2>
           <p className="text-slate-300">
-            <span className="font-semibold text-white">Title:</span>{" "}
-            {lessonText.title}
-          </p>
-          <p className="mt-2 text-slate-300">
-            <span className="font-semibold text-white">Author:</span>{" "}
-            {lessonText.author}
-          </p>
-          <p className="mt-2 text-slate-300">
             <span className="font-semibold text-white">Standard:</span>{" "}
             {standard}
           </p>
@@ -844,17 +838,15 @@ function LessonDemoPageContent() {
             <span className="font-semibold text-white">Difficulty:</span>{" "}
             {difficulty}
           </p>
-          <p className="mt-2 text-slate-300">
-            <span className="font-semibold text-white">Word Count:</span>{" "}
-            {lessonText.wordCount}
-          </p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-cyan-700 bg-cyan-900/20 p-6">
           <h2 className="mb-4 text-2xl font-semibold">{skillInfo.title}</h2>
 
           <p className="mb-4 text-slate-200">
-            <span className="font-semibold text-white">What this skill means:</span>{" "}
+            <span className="font-semibold text-white">
+              What this skill means:
+            </span>{" "}
             {skillInfo.definition}
           </p>
 
@@ -868,7 +860,9 @@ function LessonDemoPageContent() {
           </div>
 
           <div className="mb-4">
-            <p className="mb-2 font-semibold text-white">How to find the answer:</p>
+            <p className="mb-2 font-semibold text-white">
+              How to find the answer:
+            </p>
             <p className="text-slate-300">{skillInfo.howToFind}</p>
           </div>
 
@@ -885,23 +879,25 @@ function LessonDemoPageContent() {
         </div>
 
         <div className="mb-6 rounded-2xl border border-emerald-700 bg-emerald-900/20 p-6">
-          <h2 className="mb-3 text-2xl font-semibold">How to Pass This Lesson</h2>
+          <h2 className="mb-3 text-2xl font-semibold">
+            How to Pass This Lesson
+          </h2>
           <ul className="list-disc space-y-2 pl-6 text-slate-200">
             <li>Answer the actual question directly.</li>
             <li>Write in complete sentences.</li>
-            <li>Use relevant details from the passage when asked for evidence.</li>
-            <li>Explain your thinking clearly instead of giving only a short answer.</li>
+            <li>
+              Use relevant details from the passage when asked for evidence.
+            </li>
+            <li>
+              Explain your thinking clearly instead of giving only a short
+              answer.
+            </li>
             <li>A strong response usually scores 80 or higher.</li>
           </ul>
         </div>
 
         <div className="mb-6 rounded-2xl bg-slate-900 p-6">
           <h2 className="mb-4 text-2xl font-semibold">Literary Passage</h2>
-          <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950 p-4">
-            <p className="text-sm text-slate-400">
-              {lessonText.title} — {lessonText.author}
-            </p>
-          </div>
           <div className="space-y-4 leading-8 text-slate-300">
             {passage.split("\n\n").map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
@@ -958,7 +954,7 @@ function LessonDemoPageContent() {
                 : skill === "Inference"
                 ? "I can infer that..."
                 : skill === "Context Clues"
-                ? 'The phrase "I\'ll go to hell" most likely suggests...'
+                ? "The word most likely means..."
                 : "The passage shows that..."
             }
             passNote="To pass Box 1, your answer should clearly respond to the prompt and show accurate understanding of the passage."
@@ -986,7 +982,11 @@ function LessonDemoPageContent() {
                   : "border border-cyan-500 text-cyan-300 hover:bg-slate-800"
               }`}
             >
-              {loading1 ? "Evaluating..." : attempts1.length === 0 ? "Check Box 1" : "Re-check Box 1"}
+              {loading1
+                ? "Evaluating..."
+                : attempts1.length === 0
+                ? "Check Box 1"
+                : "Re-check Box 1"}
             </button>
             <span className="self-center text-slate-400">
               Attempts: {attempts1.length}
@@ -1006,7 +1006,11 @@ function LessonDemoPageContent() {
           )}
         </div>
 
-        <div className={`mb-6 rounded-2xl p-6 ${box1Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"}`}>
+        <div
+          className={`mb-6 rounded-2xl p-6 ${
+            box1Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"
+          }`}
+        >
           <h2 className="mb-4 text-2xl font-semibold">Box 2: Evidence</h2>
           <label className="mb-2 block text-slate-300">{questions[1]}</label>
 
@@ -1037,7 +1041,11 @@ function LessonDemoPageContent() {
             }}
             disabled={!box1Passed}
             className="min-h-[160px] w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white disabled:cursor-not-allowed disabled:opacity-60"
-            placeholder={box1Passed ? "Use specific text evidence." : "Pass Box 1 to unlock Box 2."}
+            placeholder={
+              box1Passed
+                ? "Use specific text evidence."
+                : "Pass Box 1 to unlock Box 2."
+            }
           />
 
           <div className="mt-4 flex flex-wrap gap-4">
@@ -1050,7 +1058,11 @@ function LessonDemoPageContent() {
                   : "border border-cyan-500 text-cyan-300 hover:bg-slate-800"
               }`}
             >
-              {loading2 ? "Evaluating..." : attempts2.length === 0 ? "Check Box 2" : "Re-check Box 2"}
+              {loading2
+                ? "Evaluating..."
+                : attempts2.length === 0
+                ? "Check Box 2"
+                : "Re-check Box 2"}
             </button>
             <span className="self-center text-slate-400">
               Attempts: {attempts2.length}
@@ -1070,7 +1082,11 @@ function LessonDemoPageContent() {
           )}
         </div>
 
-        <div className={`mb-6 rounded-2xl p-6 ${box2Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"}`}>
+        <div
+          className={`mb-6 rounded-2xl p-6 ${
+            box2Passed ? "bg-slate-900" : "bg-slate-900/50 opacity-60"
+          }`}
+        >
           <h2 className="mb-4 text-2xl font-semibold">Box 3: Explanation</h2>
           <label className="mb-2 block text-slate-300">{questions[2]}</label>
 
@@ -1101,7 +1117,11 @@ function LessonDemoPageContent() {
             }}
             disabled={!box2Passed}
             className="min-h-[160px] w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white disabled:cursor-not-allowed disabled:opacity-60"
-            placeholder={box2Passed ? "Explain your reasoning clearly." : "Pass Box 2 to unlock Box 3."}
+            placeholder={
+              box2Passed
+                ? "Explain your reasoning clearly."
+                : "Pass Box 2 to unlock Box 3."
+            }
           />
 
           <div className="mt-4 flex flex-wrap gap-4">
@@ -1114,7 +1134,11 @@ function LessonDemoPageContent() {
                   : "border border-cyan-500 text-cyan-300 hover:bg-slate-800"
               }`}
             >
-              {loading3 ? "Evaluating..." : attempts3.length === 0 ? "Check Box 3" : "Re-check Box 3"}
+              {loading3
+                ? "Evaluating..."
+                : attempts3.length === 0
+                ? "Check Box 3"
+                : "Re-check Box 3"}
             </button>
             <span className="self-center text-slate-400">
               Attempts: {attempts3.length}
@@ -1185,13 +1209,15 @@ function LessonDemoPageContent() {
 
           {!studentReady && (
             <div className="mt-4 rounded-2xl border border-amber-700 bg-amber-900/20 p-4 text-amber-300">
-              Submission is locked until student first name, last name, and period are entered.
+              Submission is locked until student first name, last name, and
+              period are entered.
             </div>
           )}
 
           {studentReady && !allPassed && (
             <div className="mt-4 rounded-2xl border border-amber-700 bg-amber-900/20 p-4 text-amber-300">
-              Submission is locked. All three boxes must pass AI evaluation before you can finish the lesson.
+              Submission is locked. All three boxes must pass AI evaluation
+              before you can finish the lesson.
             </div>
           )}
         </div>
@@ -1199,7 +1225,8 @@ function LessonDemoPageContent() {
         {submitted && (
           <div className="space-y-4">
             <div className="rounded-2xl border border-emerald-700 bg-emerald-900/20 p-4 text-emerald-300">
-              Lesson complete. You passed all three boxes, met the mastery threshold, and your response was saved.
+              Lesson complete. You passed all three boxes, met the mastery
+              threshold, and your response was saved.
             </div>
 
             <Link
